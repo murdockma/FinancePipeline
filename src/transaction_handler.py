@@ -55,6 +55,12 @@ def set_transaction_dtypes(transactions_df):
     })
     return transactions_df
 
+def add_custom_transaction_flags(df):
+    """Add simple flags"""
+    df['is_recurring'] = ((df['category'] == 'Apple') & (df['amount'].abs() < 20)).astype(int)
+    df['is_reimbursable'] = (df['category'] == 'Student Loan').astype(int)
+    return df
+
 def upload_transactions_to_bigquery(df, project='electric-cortex-289700', database='transactions', table='f_unified_transactions'):
     """Upload df to a BigQuery table"""
     try:
