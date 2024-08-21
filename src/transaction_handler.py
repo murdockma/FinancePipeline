@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import random
 import json
-
 from google.cloud import bigquery
 import pandas_gbq
 
@@ -56,12 +55,12 @@ def set_transaction_dtypes(transactions_df):
     return transactions_df
 
 def add_custom_transaction_flags(df):
-    """Add simple flags"""
+    """Template to add flags or attributes"""
     df['is_recurring'] = ((df['category'] == 'Apple') & (df['amount'].abs() < 20)).astype(int)
     df['is_reimbursable'] = (df['category'] == 'Student Loan').astype(int)
     return df
 
-def upload_transactions_to_bigquery(df, project='electric-cortex-289700', database='transactions', table='f_unified_transactions'):
+def upload_transactions_to_bigquery(df, project='electric-cortex', database='gold', table='f_unified_transactions'):
     """Upload df to a BigQuery table"""
     try:
         existing_transactions = pandas_gbq.read_gbq(
@@ -117,7 +116,6 @@ def main():
         column_names,
         category_mapping
     )
-
     # Upload to BQ
     upload_transactions_to_bigquery(transactions_df)
 

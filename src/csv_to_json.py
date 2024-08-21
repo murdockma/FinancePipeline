@@ -2,6 +2,7 @@ import os
 import json
 
 def get_file_info(directory):
+    """Scans for CSV files"""
     file_info = {}
     for filename in os.listdir(directory):
         if filename.endswith('.csv'):
@@ -9,6 +10,7 @@ def get_file_info(directory):
     return file_info
 
 def save_to_json(data, output_file):
+    """Saves data to a JSON file"""
     with open(output_file, 'w') as f:
         json.dump(data, f, indent=4)
 

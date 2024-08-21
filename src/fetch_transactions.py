@@ -1,3 +1,9 @@
+"""
+Logs into your bank account using a headless browser and downloads your latest transaction data.
+Handles everything from login to OTP verification and downloading the CSV file.
+If OTP is enabled, the user will be prompted to enter the code.
+"""
+
 import os
 import asyncio
 import pandas_gbq
@@ -5,13 +11,13 @@ from dotenv import load_dotenv
 from pyppeteer import launch
 from datetime import datetime
 
-# Load env variables (add to a .env in the project dir)
+# Load environment variables from a .env file located in the project dir
 load_dotenv()
 username = os.getenv('BANK_USERNAME')
 password = os.getenv('BANK_PASSWORD')
 
-# Example table
-def fetch_latest_dates(project='electric-cortex', database='gold', table='f_unified_transactions'):
+def fetch_latest_dates(project='electric-cortex', database='gold', table='f_unified_transactions'): # Example table
+    """Fetch latest transaction dates for incremental downloading"""
     try:
         query = f'''
             SELECT 
@@ -32,6 +38,14 @@ def extract_date(series):
     return datetime_np.astype(datetime).strftime('%m/%d/%Y')
 
 async def login_and_download(page, checking_date):
+    """Log into Wells Fargo, handle OTP, and download account activity"""
+    download_path = os.path.join(os.getcwd(), 'data')
+    os.makedirs(download_path, exist_ok=True)
+    await page._client.send('Page.setDownloadBehavior', {
+        'behavior': 'allow',
+        'downloadPath': download_path
+    })
+
     # Go to the login page (configured for Wells Fargo)
     await page.goto('https://wellsfargo.com')
     await page.click('div.ps-masthead-sign-on a.ps-sign-on-text')
@@ -41,9 +55,9 @@ async def login_and_download(page, checking_date):
     await page.type('#j_username', username)
     await page.type('#j_password', password)
     await page.waitForSelector('[data-testid="signon-button"]', {'visible': True})
-    await asyncio.sleep(5)
+    await asyncio.sleep(3)
     await page.click('[data-testid="signon-button"]')
-    # Try to click sign on again if needed
+    # Try to click sign-on button again if initial click fails
     try:
         await page.click('[data-testid="signon-button"]')
     except Exception as e:
@@ -56,7 +70,7 @@ async def login_and_download(page, checking_date):
     user_input = input("Please enter the OTP value: ")
     await page.type('#otp', user_input)
 
-    # Click the "Continue" button using XPath
+    # Click "Continue" button using XPath
     await page.waitForXPath('//button[span[text()="Continue"]]')
     buttons = await page.xpath('//button[span[text()="Continue"]]')
     if buttons:
@@ -64,7 +78,7 @@ async def login_and_download(page, checking_date):
     else:
         print('Continue button not found')
 
-    # Navigate to the download area
+    # Navigate to download area
     await page.waitForXPath('//*[@id="S_ACCOUNTS"]/div/div/span')
     elements = await page.xpath('//*[@id="S_ACCOUNTS"]/div/div/span')
     if elements:
@@ -72,7 +86,7 @@ async def login_and_download(page, checking_date):
     else:
         print("Account section element not found")
 
-    await asyncio.sleep(5)  # Ensure page has loaded
+    await asyncio.sleep(3)  # Ensure page has loaded
 
     await page.waitForXPath('//*[text()="Download Account Activity"]')
     elements = await page.xpath('//*[text()="Download Account Activity"]')
@@ -81,25 +95,25 @@ async def login_and_download(page, checking_date):
     else:
         print("Download Account Activity link not found")
 
-    # Clear the date field and enter the new date
+    # Clear date field and enter new date
     await asyncio.sleep(3)
     await page.waitForSelector('#fromDate')
     await page.evaluate('''document.querySelector('#fromDate').value = '' ''')
     await page.type('#fromDate', checking_date)
 
-    # Select the file format and download
+    # Select file format and download
     await page.waitForSelector('[data-testid="radio-fileFormat-commaDelimited"]')
     await page.click('[data-testid="radio-fileFormat-commaDelimited"]')
     await page.waitForSelector('[data-testid="download-button"]')
     await page.click('[data-testid="download-button"]')
 
-    # Confirm the download
+    # Confirm download
     await asyncio.sleep(3)
     await page.keyboard.press('Enter')
     await page.keyboard.press('Enter')
-    await asyncio.sleep(2)
+    await asyncio.sleep(3)
     await page.keyboard.press('Enter')
-    await asyncio.sleep(10)
+    await asyncio.sleep(3)
 
 
 async def main():
@@ -110,12 +124,12 @@ async def main():
         print("Failed to fetch the latest dates. Exiting.")
         return
 
-    # Set up download path
+    # Set download path
     download_path = os.path.join(os.getcwd(), 'data')
     os.makedirs(download_path, exist_ok=True)
 
     # Launch browser and start download
-    browser = await launch(headless=False)
+    browser = await launch(headless=True)
     context = await browser.createIncognitoBrowserContext()
     page = await context.newPage()
 
