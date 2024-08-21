@@ -1,16 +1,17 @@
-from dotenv import load_dotenv
 import os
-from pyppeteer import launch
-import pandas_gbq
-from datetime import datetime
 import asyncio
+import pandas_gbq
+from dotenv import load_dotenv
+from pyppeteer import launch
+from datetime import datetime
 
-# Load env variables
+# Load env variables (add to a .env in the project dir)
 load_dotenv()
 username = os.getenv('BANK_USERNAME')
 password = os.getenv('BANK_PASSWORD')
 
-def fetch_latest_dates(project='electric-cortex-289700', database='transactions', table='f_unified_transactions'):
+# Example table
+def fetch_latest_dates(project='electric-cortex', database='gold', table='f_unified_transactions'):
     try:
         query = f'''
             SELECT 
@@ -31,7 +32,7 @@ def extract_date(series):
     return datetime_np.astype(datetime).strftime('%m/%d/%Y')
 
 async def login_and_download(page, checking_date):
-    # Go to the login page
+    # Go to the login page (configured for Wells Fargo)
     await page.goto('https://wellsfargo.com')
     await page.click('div.ps-masthead-sign-on a.ps-sign-on-text')
 
@@ -40,7 +41,9 @@ async def login_and_download(page, checking_date):
     await page.type('#j_username', username)
     await page.type('#j_password', password)
     await page.waitForSelector('[data-testid="signon-button"]', {'visible': True})
+    await asyncio.sleep(5)
     await page.click('[data-testid="signon-button"]')
+    # Try to click sign on again if needed
     try:
         await page.click('[data-testid="signon-button"]')
     except Exception as e:
