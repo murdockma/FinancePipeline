@@ -1,3 +1,10 @@
+"""
+Processes bank transaction data and uploads it to Google BigQuery.
+
+The script loads configuration and data paths, imports and cleans transaction data,
+categorizes it, and then uploads the processed data to BigQuery.
+"""
+
 import os
 import pandas as pd
 import numpy as np
