@@ -1,4 +1,4 @@
-This project is a template for automating the process of downloading, processing, and uploading your bank transaction data. It logs into a Wells Fargo bank account, downloads the latest transaction details, and processes them before sending everything over to BigQuery for easy analysis and visualization.
+Automating the process of downloading, processing, and uploading bank transaction data. Logs into a Wells Fargo bank account, downloads the latest transaction details, and processes them before sending everything over to BigQuery for easy analysis and visualization.
 
 - Install the required packages:
 ```bash
